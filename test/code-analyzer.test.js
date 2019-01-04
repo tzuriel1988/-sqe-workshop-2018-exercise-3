@@ -546,11 +546,12 @@ describe('The javascript parser', () => {
         assert.equal(graphToDrow[1].includes('b = a / y'),true);
     });
 
-    it('check WhileStatement',() => {
+    it('check AssignmentExpression',() => {
         var codeToParse='function foo(x, y, z){\n'+
             'let a = x * 2;\n'+
             'let b = a / y;\n'+
             'z = a + b;\n'+
+            'b=1;\n'+
             'return z;\n'+
             '}';
 
@@ -561,11 +562,244 @@ describe('The javascript parser', () => {
         dic=[];
         symbolicSubstition(codeToParse,dic);
         var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
-        assert.equal(graphToDrow[0].includes('a = x * 2'),true);
-        assert.equal(graphToDrow[1].includes('b = a / y'),true);
+        assert.equal(graphToDrow[3].includes('b=1'),true);
+        assert.equal(graphToDrow[3].includes('"green"'),true);
+    });
+
+    it('check WhileStatement',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'while (a < z) {\n'+
+                'c = a + b;\n'+
+                'z = c * 2;\n'+
+            '}\n'+
+            'return z;\n'+
+        '}';
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('a < z'),true);
+        assert.equal(graphToDrow[3].includes('"gray"'),true);
+        assert.equal(graphToDrow[4].includes('"gray"'),true);
+        assert.equal(graphToDrow[5].includes('"gray"'),true);
     });
 
 
+    it('check IfStatement',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z) {\n'+
+                'c = c + 5;\n'+
+            '} else if (b < z * 2) {\n'+
+                'c = c + x + 5;\n'+
+            '} else {\n'+
+                'c = c + z + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+        '}';
+
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('b < z'),true);
+        assert.equal(graphToDrow[3].includes('"red"'),true);
+        assert.equal(graphToDrow[4].includes('c = c + 5'),true);
+        assert.equal(graphToDrow[4].includes('"gray"'),true);
+        assert.equal(graphToDrow[6].includes('b < z * 2'),true);
+        assert.equal(graphToDrow[6].includes('"green"'),true);
+        assert.equal(graphToDrow[7].includes('c = c + x + 5'),true);
+        assert.equal(graphToDrow[7].includes('"green"'),true);
+        assert.equal(graphToDrow[8].includes('c = c + z + 5'),true);
+        assert.equal(graphToDrow[8].includes('"gray"'),true);
+    });
+
+    it('check LogicalExpression',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z || a > b) {\n'+
+            'c = c + 5;\n'+
+            '} else if (b < z * 2) {\n'+
+            'c = c + x + 5;\n'+
+            '} else {\n'+
+            'c = c + z + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+            '}';
+
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('b < z || a > b'),true);
+        assert.equal(graphToDrow[3].includes('"red"'),true);
+
+    });
+
+    it('check two ifs with true',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z || a < b) {\n'+
+            'c = c + 5;\n'+
+            '} else if (b < z * 2) {\n'+
+            'c = c + x + 5;\n'+
+            '} else {\n'+
+            'c = c + z + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+            '}';
+
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('"green"'),true);
+        assert.equal(graphToDrow[6].includes('"red"'),true);
+    });
+
+    it('check UpdateExpression',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z || a < b) {\n'+
+            'c = c + 5;\n'+
+            'a++;\n'+
+            '} else if (b < z * 2) {\n'+
+            'c = c + x + 5;\n'+
+            '} else {\n'+
+            'c = c + z + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+            '}';
+
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[5].includes('a++'),true);
+        assert.equal(graphToDrow[5].includes('"green"'),true);
+    });
+
+    it('check UnaryExpression',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z || a == -1) {\n'+
+            'c = c + 5;\n'+
+            'a++;\n'+
+            '} else if (b < z * 2) {\n'+
+            'c = c + x + 5;\n'+
+            '} else {\n'+
+            'c = c + z + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+            '}';
+
+
+        var args='x=1,y=2,z=3';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('a == -1'),true);
+        assert.equal(graphToDrow[3].includes('"red"'),true);
+    });
+
+
+    it('check MemberExpression',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let a = x + 1;\n'+
+            'let b = a + y;\n'+
+            'let c = 0;\n'+
+            'if (b < z[0]) {\n'+
+                'c = c + 5;\n'+
+            '} else if (b < z[1] * 2) {\n'+
+                'c = c + x + 5;\n'+
+            '} else {\n'+
+                'c = c + z[0] + 5;\n'+
+            '}\n'+
+            'return c;\n'+
+        '}';
+
+
+
+        var args='x=1,y=2,z=[4, 5, true]';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[3].includes('b < z[0]'),true);
+        assert.equal(graphToDrow[3].includes('"red"'),true);
+        assert.equal(graphToDrow[6].includes('b < z[1] * 2'),true);
+        assert.equal(graphToDrow[6].includes('"green"'),true);
+        assert.equal(graphToDrow[8].includes('c = c + z[0] + 5'),true);
+        assert.equal(graphToDrow[8].includes('"gray"'),true);
+    });
+
+
+    it('check ArrayExpression',() => {
+        var codeToParse='function foo(x, y, z){\n'+
+            'let tzuri=[4, 5, true];\n'+
+            'let a=[4,3,false];\n'+
+            'if (a[0] == tzuri[0] || z[0] != a[1]) {\n'+
+                'a[1]=x;\n'+
+            '} else if (a[1] == z[1]) {\n'+
+                'tzuri[1]=y;\n'+
+            '} else {\n'+
+                'z[2]=false;\n'+
+            '}\n'+
+            'return tzuri\n'+
+        '}';
+
+
+
+        var args='x=1,y=2,z=[4, 5, true]';
+        var parsedCode = parseCode(codeToParse);
+        parserNewJson(parsedCode,dic,0);
+        assignmentArguments(args);
+        dic=[];
+        symbolicSubstition(codeToParse,dic);
+        var graphToDrow = parsedGraph( codeToParse,parsedCode,true);
+        assert.equal(graphToDrow[0].includes('[4, 5, true]'),true);
+        assert.equal(graphToDrow[1].includes('[4,3,false]'),true);
+
+
+    });
 
 
 

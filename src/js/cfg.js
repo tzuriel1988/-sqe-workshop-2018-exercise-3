@@ -33,9 +33,9 @@ function getNodesWhile(codeToParse) {
     for(var i=0; i<tempArray.length; i++){
         tempArray[i]=clearEmptyLine(tempArray[i]);
     }
-    for(var i=0; i<tempArray.length; i++){
-        if(tempArray[i]=='')
-            tempArray.splice(i, 1);
+    for(var j=0; j<tempArray.length; j++){
+        if(tempArray[j]=='')
+            tempArray.splice(j, 1);
     }
     return createArrayWhile(tempArray);
 
@@ -92,28 +92,20 @@ function stringForViz() {
 }
 
 function getCurrentFun(type) {
-    if(type=='AssignmentExpression' || type=='UpdateExpression' || type=='VariableDeclaration')
+    if(type=='AssignmentExpression' || type=='UpdateExpression' || type=='VariableDeclaration' || type=='ReturnStatement')
         return handleVar;
     else
         return getCurrentFun1(type);
 }
 
 function getCurrentFun1(type) {
-    if(type=='BinaryExpression' || type=='LogicalExpression'|| type=='IfStatement')
+    if(type=='LogicalExpression' || type=='BinaryExpression' )
         return handleCondition;
-    else
-        return getCurrentFun2(type);
-
-}
-function getCurrentFun2(type) {
-    if(type=='WhileStatement' ){
-        return handleCondition;
-    }
-    else if(type=='ReturnStatement')
-        return handleVar;
     else
         return handaleIdentifier;
+
 }
+
 
 function getType(line){
     if(line.includes('let') || line.includes('var')){
@@ -158,16 +150,15 @@ function handleVar() {
         var arraySplit=letOrVar(row);
         graphToDrow[correntLine]=arraySplit[0]+arraySplit[1];
         row=graphToDrow[correntLine];
-        graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="box"]';
-        //graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="box",style="filled", color="green"]';
+        graphToDrow[correntLine]=row.substring(0,row.indexOf('"]'))+'", shape="box"]';
     }
     else if(row.includes('return')){
         row=graphToDrow[correntLine];
-        graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="box",style="filled", color="green"]';
+        graphToDrow[correntLine]=row.substring(0,row.indexOf('"]'))+'", shape="box",style="filled", color="green"]';
     }
     else{
         row=graphToDrow[correntLine];
-        graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="box"]';
+        graphToDrow[correntLine]=row.substring(0,row.indexOf('"]'))+'", shape="box"]';
     }
     correntLine++;
     checkEnd();
@@ -185,11 +176,11 @@ function handleCondition() {
             color='green';
         else
             color='red';
-        graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="diamond",style="filled", color="'+color+'"]';
+        graphToDrow[correntLine]=row.substring(0,row.indexOf('"]'))+'", shape="diamond",style="filled", color="'+color+'"]';
         numColor++;
     }
     else{
-        graphToDrow[correntLine]=row.substring(0,row.indexOf(']'))+', shape="diamond",style="filled", color="gray"]';
+        graphToDrow[correntLine]=row.substring(0,row.indexOf('"]'))+'", shape="diamond",style="filled", color="gray"]';
 
     }
     correntLine++;
@@ -280,15 +271,26 @@ function addcolorToNode(line,type) {
     var strNode2=node2[1];
     var lineNode1=getLineNode(strNode1);
     var lineNode2=getLineNode(strNode2);
-    changeColor(lineNode1,lineNode2,type);
+    changeC(lineNode1,lineNode2,type);
 }
 
-function changeColor(node1,node2,type) {
-    if(node2.includes('"diamond"') && node1.includes('"diamond"'))
+function changeC(node1,node2,type) {
+    if(node2.includes('"diamond"') && node1.includes('"diamond"')){
+        if(node1.includes('"green"') && node2.includes('"green"')){
+            var numLineTT=getNumLineNode(node2);
+            graphToDrow[numLineTT]=node2.substring(0,node2.indexOf(',style'))+',style="filled", color="red"]';
+        }
         return;
+    }
+    changeColor(node1,node2,type);
+}
+
+
+
+function changeColor(node1,node2,type) {
     if(node1.includes('"red"')){
         var numLine=getNumLineNode(node2);
-        graphToDrow[numLine]=node2.substring(0,node2.indexOf(']'))+',style="filled", color="gray"]';
+        graphToDrow[numLine]=node2.substring(0,node2.indexOf('"]'))+'",style="filled", color="gray"]';
         return;
     }
     changeColor1(node1,node2,type);
@@ -297,7 +299,7 @@ function changeColor(node1,node2,type) {
 function changeColor1(node1,node2,type) {
     if(node1.includes('"green"') && node1.includes('"diamond"') && type){
         var numLineOfNode2=getNumLineNode(node2);
-        graphToDrow[numLineOfNode2]=node2.substring(0,node2.indexOf(']'))+',style="filled", color="green"]';
+        graphToDrow[numLineOfNode2]=node2.substring(0,node2.indexOf('"]'))+'",style="filled", color="green"]';
         return;
     }
     changeColor2(node1,node2,type);
@@ -306,7 +308,7 @@ function changeColor1(node1,node2,type) {
 function changeColor2(node1,node2,type)  {
     if(node1.includes('"green"') && node1.includes('"diamond"') && !type){
         var numLineOfNode3=getNumLineNode(node2);
-        graphToDrow[numLineOfNode3]=node2.substring(0,node2.indexOf(']'))+',style="filled", color="gray"]';
+        graphToDrow[numLineOfNode3]=node2.substring(0,node2.indexOf('"]'))+'",style="filled", color="gray"]';
         return;
     }
     changeColor3(node1,node2);
@@ -316,12 +318,12 @@ function changeColor2(node1,node2,type)  {
 function changeColor3(node1,node2) {
     if(node1.includes('"gray"') && !node2.includes('color')){
         var numLine1=getNumLineNode(node2);
-        graphToDrow[numLine1]=node2.substring(0,node2.indexOf(']'))+',style="filled", color="gray"]';
+        graphToDrow[numLine1]=node2.substring(0,node2.indexOf('"]'))+'",style="filled", color="gray"]';
         return;
     }
     if(!node1.includes('color')){
         var numLine2=getNumLineNode(node1);
-        graphToDrow[numLine2]=node1.substring(0,node1.indexOf(']'))+',style="filled", color="green"]';
+        graphToDrow[numLine2]=node1.substring(0,node1.indexOf('"]'))+'",style="filled", color="green"]';
         return;
     }
 }
